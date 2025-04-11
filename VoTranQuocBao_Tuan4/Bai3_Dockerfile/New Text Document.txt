@@ -1,0 +1,36 @@
+# Bước 1: Dùng image nhẹ node:18-alpine
+FROM node:18-alpine AS build
+
+# Tạo thư mục ứng dụng
+WORKDIR /app
+
+# Sao chép file package.json và package-lock.json
+COPY package*.json ./
+
+# Cài đặt dependencies
+RUN npm install
+
+# Sao chép toàn bộ source code
+COPY . .
+
+# Build ứng dụng React cho production
+RUN npm run build
+
+# ------------------------------
+# Bước 2: Dùng image nhẹ để chạy app
+FROM node:18-alpine
+
+# Cài đặt gói http-server để chạy frontend
+RUN npm install -g http-server
+
+# Tạo thư mục làm việc
+WORKDIR /app
+
+# Sao chép build từ stage trước
+COPY --from=build /app/build ./build
+
+# Expose port (mặc định http-server dùng 8080)
+EXPOSE 8080
+
+# Lệnh chạy ứng dụng
+CMD ["http-server", "build", "-p", "8080"]
